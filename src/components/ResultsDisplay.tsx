@@ -17,19 +17,29 @@ const SEVERITY_COLOR = {
 }
 
 const METRIC_LABELS: Record<string, string> = {
-  http_errors:               '4xx / 5xx Errors',
-  missing_h1:                'Missing H1 Tags',
-  missing_meta_title:        'Missing Meta Titles',
-  duplicate_meta_titles:     'Duplicate Meta Titles',
-  missing_meta_description:  'Missing Meta Descriptions',
-  duplicate_meta_descriptions:'Duplicate Meta Descriptions',
-  missing_canonical:         'Missing Canonical Tags',
-  image_alt_gaps:            'Images Without Alt Text',
-  broken_internal_links:     'Broken Internal Links',
-  orphan_pages:              'Orphan Pages',
-  mobile_viewport:           'Missing Viewport Tag',
-  https_check:               'Non-HTTPS Pages',
-  redirect_chains:           'Redirect Chains',
+  http_errors:                      '4xx / 5xx Errors',
+  missing_h1:                       'Missing H1 Tags',
+  missing_meta_title:               'Missing Meta Titles',
+  duplicate_meta_titles:            'Duplicate Meta Titles',
+  missing_meta_description:         'Missing Meta Descriptions',
+  duplicate_meta_descriptions:      'Duplicate Meta Descriptions',
+  missing_canonical:                'Missing Canonical Tags',
+  image_alt_gaps:                   'Images Without Alt Text',
+  broken_internal_links:            'Broken Internal Links',
+  orphan_pages:                     'Orphan Pages',
+  mobile_viewport:                  'Missing Viewport Tag',
+  https_check:                       'Non-HTTPS Pages',
+  redirect_chains:                  'Redirect Chains',
+  multiple_h1_tags:                 'Multiple H1 Tags',
+  title_length_issues:              'Title Length Issues',
+  meta_description_length_issues:   'Meta Description Length Issues',
+  mixed_content:                    'Mixed Content (HTTP/HTTPS)',
+  broken_external_links:            'Broken External Links',
+  redirect_loops:                   'Redirect Loops',
+  hreflang_errors:                  'Hreflang Errors',
+  xml_sitemap_issues:               'XML Sitemap Issues',
+  schema_markup_errors:             'Schema Markup Errors',
+  image_file_size_issues:           'Large Uncompressed Images',
 }
 
 function MetricsGrid({ metrics }: { metrics: AuditResult['metrics'] }) {
@@ -85,6 +95,7 @@ function MetricsGrid({ metrics }: { metrics: AuditResult['metrics'] }) {
 export default function ResultsDisplay({ audit }: Props) {
   const [copied, setCopied] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
   const ai = audit.ai_recommendations
 
   async function handleCopy() {
@@ -96,8 +107,15 @@ export default function ResultsDisplay({ audit }: Props) {
   async function handleDownload() {
     if (!audit.id) return
     setDownloading(true)
-    try { await downloadPdf(audit.id) }
-    finally { setDownloading(false) }
+    setDownloadError(null)
+    try {
+      await downloadPdf(audit.id)
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Download failed')
+      setTimeout(() => setDownloadError(null), 5000)
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -111,15 +129,20 @@ export default function ResultsDisplay({ audit }: Props) {
           <h1 className="text-2xl font-bold text-white">{audit.domain}</h1>
           <p className="text-slate-400 text-sm">{audit.pages_crawled} pages crawled · {audit.status}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-col sm:flex-row">
           <button onClick={handleCopy}
             className="px-4 py-2 rounded-xl border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 text-sm font-medium transition-colors">
             {copied ? '✓ Copied!' : '🔗 Share'}
           </button>
-          <button onClick={handleDownload} disabled={!audit.id || downloading}
-            className="px-4 py-2 rounded-xl border border-brand-600 bg-brand-900/40 text-brand-300 hover:bg-brand-900/70 text-sm font-medium transition-colors disabled:opacity-40">
-            {downloading ? 'Preparing…' : '⬇ PDF'}
-          </button>
+          <div className="flex flex-col gap-1">
+            <button onClick={handleDownload} disabled={!audit.id || downloading}
+              className="px-4 py-2 rounded-xl border border-brand-600 bg-brand-900/40 text-brand-300 hover:bg-brand-900/70 text-sm font-medium transition-colors disabled:opacity-40">
+              {downloading ? 'Preparing…' : '⬇ PDF'}
+            </button>
+            {downloadError && (
+              <p className="text-xs text-red-400">{downloadError}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -156,7 +179,7 @@ export default function ResultsDisplay({ audit }: Props) {
         </section>
       )}
 
-      {/* All 13 metrics */}
+      {/* All 23 metrics */}
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white">All Metrics</h2>
         <MetricsGrid metrics={audit.metrics} />

@@ -25,13 +25,11 @@ export default function HomePage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-700 bg-brand-900/30 text-brand-300 text-xs font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />
-            AI-Powered · 13 Metrics · Instant Report
+            AI-Powered · 23 Metrics · Instant Report
           </div>
 
-          <h1 className="text-5xl sm:text-6xl font-extrabold leading-tight">
-            <span className="gradient-text">SEO Intelligence</span>
-            <br />
-            <span className="text-white">Audit Tool</span>
+          <h1 className="text-5xl sm:text-6xl font-extrabold leading-tight text-white">
+            SEO Intelligence Audit Tool
           </h1>
 
           <p className="text-slate-400 text-lg max-w-xl mx-auto leading-relaxed">
@@ -48,8 +46,8 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
           {[
             { icon: '🔍', label: 'Deep Crawl', desc: 'Up to 500 pages' },
-            { icon: '📊', label: '13 Metrics', desc: 'Full SEO coverage' },
-            { icon: '🤖', label: 'AI Analysis', desc: 'Claude-powered' },
+            { icon: '📊', label: '23 Metrics', desc: 'Full SEO coverage' },
+            { icon: '🤖', label: 'AI Analysis', desc: 'Intelligent insights' },
             { icon: '⚡', label: 'Instant', desc: 'Results in ~60s' },
           ].map(f => (
             <div key={f.label} className="space-y-1">

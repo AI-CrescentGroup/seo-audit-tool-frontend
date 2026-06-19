@@ -41,6 +41,16 @@ export interface AuditMetrics {
   mobile_viewport: MetricDetail & { all_pages_have_viewport?: boolean }
   https_check: MetricDetail & { https_percentage?: number }
   redirect_chains: MetricDetail
+  multiple_h1_tags: MetricDetail
+  title_length_issues: MetricDetail
+  meta_description_length_issues: MetricDetail
+  mixed_content: MetricDetail
+  broken_external_links: MetricDetail & { broken_links?: unknown[] }
+  redirect_loops: MetricDetail & { loops?: unknown[] }
+  hreflang_errors: MetricDetail
+  xml_sitemap_issues: MetricDetail & { issues?: unknown[] }
+  schema_markup_errors: MetricDetail
+  image_file_size_issues: MetricDetail & { large_images?: unknown[] }
 }
 
 export interface AuditResult {
@@ -93,12 +103,28 @@ export async function listAudits(limit = 10): Promise<AuditResult[]> {
 
 /** Trigger browser download of the PDF report */
 export async function downloadPdf(id: string): Promise<void> {
-  const url = `${BASE}/api/audit/${id}/pdf`
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `seo-audit-${id}.pdf`
-  a.target = '_blank'
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+  try {
+    const url = `${BASE}/api/audit/${id}/pdf`
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`PDF download failed: ${response.status} — ${error}`)
+    }
+
+    const blob = await response.blob()
+    const blobUrl = URL.createObjectURL(blob)
+
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = `seo-audit-${id}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+
+    // Clean up the blob URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 100)
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to download PDF')
+  }
 }
