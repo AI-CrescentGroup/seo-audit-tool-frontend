@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AuditResult, downloadPdf } from '@/utils/api'
+import { AuditResult, downloadPdf, getPageRewrite } from '@/utils/api'
 import ScoreCard from './ScoreCard'
 import IssueCard from './IssueCard'
 import Link from 'next/link'
@@ -96,7 +96,10 @@ export default function ResultsDisplay({ audit }: Props) {
   const [copied, setCopied] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [rewritingPage, setRewritingPage] = useState<string | null>(null)
+  const [expandedGEOPage, setExpandedGEOPage] = useState<string | null>(null)
   const ai = audit.ai_recommendations
+  const geoScore = audit.metrics.geo_score
 
   async function handleCopy() {
     await navigator.clipboard.writeText(window.location.href)
@@ -179,6 +182,90 @@ export default function ResultsDisplay({ audit }: Props) {
         </section>
       )}
 
+      {/* GEO Score */}
+      {geoScore && (
+        <section className="space-y-4">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <span className="text-purple-400">✨</span> GEO Score (LLM Optimization)
+          </h2>
+          <div className="rounded-xl border border-purple-800 bg-purple-900/20 p-6">
+            <div className="text-center mb-6">
+              <div className="text-5xl font-bold text-purple-300">{geoScore.average}</div>
+              <div className="text-slate-400 text-sm">out of 10</div>
+            </div>
+            <p className="text-slate-300 text-sm mb-4">
+              GEO Score measures how well your pages are optimized for citation by generative AI engines
+              (ChatGPT, Perplexity, Gemini). Higher scores indicate better LLM-friendliness.
+            </p>
+
+            {/* Per-page GEO scores */}
+            {geoScore.per_page && geoScore.per_page.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-purple-300 mb-3">Top Pages by GEO Score:</p>
+                {geoScore.per_page
+                  .sort((a, b) => b.geo_score - a.geo_score)
+                  .slice(0, 5)
+                  .map((page) => (
+                    <div key={page.url} className="rounded-lg bg-slate-800/40 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <a href={page.url} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-purple-300 hover:text-purple-200 truncate hover:underline">
+                          {page.url}
+                        </a>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-white">{page.geo_score}/10</span>
+                          <button onClick={() => setExpandedGEOPage(expandedGEOPage === page.url ? null : page.url)}
+                            className="text-xs px-2 py-1 rounded bg-purple-900/50 text-purple-300 hover:bg-purple-900">
+                            {expandedGEOPage === page.url ? '−' : '+'}
+                          </button>
+                        </div>
+                      </div>
+                      {expandedGEOPage === page.url && (
+                        <div className="space-y-2 pt-2 border-t border-slate-700">
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <span className="text-slate-400">FAQ Schema:</span>
+                              <span className={page.geo_signals.faq_schema_present ? 'text-green-400' : 'text-red-400'}>
+                                {page.geo_signals.faq_schema_present ? ' ✓ Present' : ' ✗ Missing'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">Entity Density:</span>
+                              <span className="text-blue-400"> {page.geo_signals.entity_density.toFixed(1)}/100w</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">Answer Density:</span>
+                              <span className="text-blue-400"> {page.geo_signals.answer_density_score}/5</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">Readability:</span>
+                              <span className="text-blue-400"> {page.geo_signals.readability_score}/2</span>
+                            </div>
+                          </div>
+                          {page.geo_issues.length > 0 && (
+                            <div className="space-y-1 mt-2">
+                              <p className="text-slate-400 text-xs">Issues:</p>
+                              {page.geo_issues.map((issue, i) => (
+                                <p key={i} className="text-xs text-amber-400">• {issue}</p>
+                              ))}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => handleRewrite(page.url, audit.id || '')}
+                            disabled={rewritingPage === page.url}
+                            className="mt-3 w-full px-3 py-1 rounded text-xs bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">
+                            {rewritingPage === page.url ? 'Rewriting…' : '✨ Rewrite for GEO'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* All 23 metrics */}
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white">All Metrics</h2>
@@ -186,4 +273,19 @@ export default function ResultsDisplay({ audit }: Props) {
       </section>
     </div>
   )
+
+  async function handleRewrite(pageUrl: string, auditId: string) {
+    setRewritingPage(pageUrl)
+    try {
+      const content = 'Please enter the page content to rewrite' // In practice, fetch from page
+      const keyword = 'target keyword' // In practice, derive from audit
+      const result = await getPageRewrite(auditId, pageUrl, keyword, content)
+      // Show result modal or drawer
+      alert(`Rewrite complete!\n\nDiff Summary: ${result.diff_summary}`)
+    } catch (err) {
+      alert(`Rewrite failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setRewritingPage(null)
+    }
+  }
 }

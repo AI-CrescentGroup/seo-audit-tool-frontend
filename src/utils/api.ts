@@ -26,6 +26,22 @@ export interface MetricDetail {
   [key: string]: unknown
 }
 
+export interface GEOSignals {
+  faq_schema_present: boolean
+  entity_density: number
+  answer_density_score: number
+  heading_structure_score: number
+  content_freshness_score: number
+  readability_score: number
+}
+
+export interface GEOPageScore {
+  url: string
+  geo_score: number
+  geo_signals: GEOSignals
+  geo_issues: string[]
+}
+
 export interface AuditMetrics {
   pages_crawled: number
   http_errors: MetricDetail
@@ -51,6 +67,7 @@ export interface AuditMetrics {
   xml_sitemap_issues: MetricDetail & { issues?: unknown[] }
   schema_markup_errors: MetricDetail
   image_file_size_issues: MetricDetail & { large_images?: unknown[] }
+  geo_score?: { average: number; per_page: GEOPageScore[] }
 }
 
 export interface AuditResult {
@@ -127,4 +144,20 @@ export async function downloadPdf(id: string): Promise<void> {
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Failed to download PDF')
   }
+}
+
+/** Rewrite page content for GEO (Generative Engine Optimization) */
+export async function getPageRewrite(
+  auditId: string,
+  pageUrl: string,
+  targetKeyword: string,
+  pageContent: string
+): Promise<{ rewritten_content: string; faq_block: string; json_ld_schema: unknown; diff_summary: string }> {
+  return apiFetch<{ rewritten_content: string; faq_block: string; json_ld_schema: unknown; diff_summary: string }>(
+    `/api/audit/${auditId}/rewrite`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ page_url: pageUrl, target_keyword: targetKeyword, page_content: pageContent }),
+    }
+  )
 }
