@@ -41,9 +41,10 @@ export default function ResultsPage() {
 
     async function poll() {
       const data = await fetchAudit()
-      if (data && (data.status === 'completed' || data.status === 'cached')) return
-      // Poll every 2s while processing
-      timer = setTimeout(poll, 2000)
+      if (!data) return  // network error, stop polling
+      if (data.status === 'completed' || data.status === 'cached' || data.status === 'error') return
+      // Poll every 3s while processing
+      timer = setTimeout(poll, 3000)
     }
 
     poll()
@@ -58,6 +59,7 @@ export default function ResultsPage() {
   }, [audit, startedAt])
 
   const isDone = audit?.status === 'completed' || audit?.status === 'cached'
+  const isError = audit?.status === 'error'
 
   if (error) {
     return (
@@ -98,7 +100,16 @@ export default function ResultsPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-6 py-10">
-        {!isDone ? (
+        {isError ? (
+          <div className="text-center space-y-4">
+            <div className="text-5xl">⚠️</div>
+            <h1 className="text-xl font-bold text-white">Audit failed</h1>
+            <p className="text-slate-400 text-sm">{audit?.ai_recommendations?.summary ?? 'An error occurred during the audit.'}</p>
+            <Link href="/" className="inline-block px-6 py-3 rounded-xl gradient-brand text-white font-medium hover:opacity-90 transition-opacity">
+              Try again
+            </Link>
+          </div>
+        ) : !isDone ? (
           <LoadingSpinner
             pagesCrawled={audit?.pages_crawled ?? 0}
             step={inferStep(audit, elapsed)}
