@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AuditResult, downloadPdf, getPageRewrite } from '@/utils/api'
+import { AuditResult, downloadPdf, rewriteForGeo } from '@/utils/api'
 import ScoreCard from './ScoreCard'
 import IssueCard from './IssueCard'
 import Link from 'next/link'
@@ -251,7 +251,7 @@ export default function ResultsDisplay({ audit }: Props) {
                             </div>
                           )}
                           <button
-                            onClick={() => handleRewrite(page.url, audit.id || '')}
+                            onClick={() => handleRewrite(page.url, page.geo_issues)}
                             disabled={rewritingPage === page.url}
                             className="mt-3 w-full px-3 py-1 rounded text-xs bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">
                             {rewritingPage === page.url ? 'Rewriting…' : '✨ Rewrite for GEO'}
@@ -274,16 +274,40 @@ export default function ResultsDisplay({ audit }: Props) {
     </div>
   )
 
-  async function handleRewrite(pageUrl: string, auditId: string) {
+  async function handleRewrite(pageUrl: string, geoIssues: string[] = []) {
     setRewritingPage(pageUrl)
     try {
-      const content = 'Please enter the page content to rewrite' // In practice, fetch from page
-      const keyword = 'target keyword' // In practice, derive from audit
-      const result = await getPageRewrite(auditId, pageUrl, keyword, content)
-      // Show result modal or drawer
-      alert(`Rewrite complete!\n\nDiff Summary: ${result.diff_summary}`)
+      // Fetch page content from the URL
+      console.log(`Fetching content from ${pageUrl}`)
+      const pageResp = await fetch(pageUrl)
+      const pageHtml = await pageResp.text()
+
+      // Extract text content from HTML
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(pageHtml, 'text/html')
+      const pageContent = doc.body.innerText.substring(0, 2000) // First 2000 chars
+
+      if (!pageContent || pageContent.length < 50) {
+        alert('Failed to fetch page content')
+        return
+      }
+
+      // Call rewrite API
+      const result = await rewriteForGeo(pageUrl, pageContent, geoIssues)
+
+      // Show success with diff summary
+      alert(
+        `✅ Rewrite Complete!\n\n${result.diff_summary}\n\n` +
+          `Rewritten content preview:\n${result.rewritten_content.substring(0, 200)}...`
+      )
+
+      // Optional: Log FAQ suggestions if available
+      if (result.faq_suggestions && result.faq_suggestions.length > 0) {
+        console.log('FAQ Suggestions:', result.faq_suggestions)
+      }
     } catch (err) {
-      alert(`Rewrite failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      alert(`❌ Rewrite failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      console.error('Rewrite error:', err)
     } finally {
       setRewritingPage(null)
     }

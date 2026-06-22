@@ -147,17 +147,25 @@ export async function downloadPdf(id: string): Promise<void> {
 }
 
 /** Rewrite page content for GEO (Generative Engine Optimization) */
-export async function getPageRewrite(
-  auditId: string,
-  pageUrl: string,
-  targetKeyword: string,
-  pageContent: string
-): Promise<{ rewritten_content: string; faq_block: string; json_ld_schema: unknown; diff_summary: string }> {
-  return apiFetch<{ rewritten_content: string; faq_block: string; json_ld_schema: unknown; diff_summary: string }>(
-    `/api/audit/${auditId}/rewrite`,
-    {
-      method: 'POST',
-      body: JSON.stringify({ page_url: pageUrl, target_keyword: targetKeyword, page_content: pageContent }),
-    }
-  )
+export async function rewriteForGeo(
+  url: string,
+  currentContent: string,
+  geoIssues: string[] = []
+): Promise<{
+  url: string
+  original_content: string
+  rewritten_content: string
+  diff_summary: string
+  faq_suggestions?: Array<{ question: string; answer: string }>
+}> {
+  return apiFetch<{
+    url: string
+    original_content: string
+    rewritten_content: string
+    diff_summary: string
+    faq_suggestions?: Array<{ question: string; answer: string }>
+  }>(`/api/rewrite-for-geo`, {
+    method: 'POST',
+    body: JSON.stringify({ url, current_content: currentContent, geo_issues: geoIssues }),
+  })
 }
