@@ -400,7 +400,7 @@ export default function ResultsDisplay({ audit }: Props) {
         </section>
       )}
 
-      {/* All 23 metrics */}
+      {/* All 35 metrics */}
       <section className="space-y-4">
         <h2 className="text-xl font-bold text-white">All Metrics</h2>
         <MetricsGrid metrics={audit.metrics} />
@@ -411,23 +411,8 @@ export default function ResultsDisplay({ audit }: Props) {
   async function handleRewrite(pageUrl: string, geoIssues: string[] = []) {
     setRewritingPage(pageUrl)
     try {
-      // Fetch page content from the URL
-      console.log(`Fetching content from ${pageUrl}`)
-      const pageResp = await fetch(pageUrl)
-      const pageHtml = await pageResp.text()
-
-      // Extract text content from HTML
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(pageHtml, 'text/html')
-      const pageContent = doc.body.innerText.substring(0, 2000) // First 2000 chars
-
-      if (!pageContent || pageContent.length < 50) {
-        alert('Failed to fetch page content')
-        return
-      }
-
-      // Call rewrite API
-      const result = await rewriteForGeo(pageUrl, pageContent, geoIssues)
+      // Backend fetches page content server-side (avoids CORS)
+      const result = await rewriteForGeo(pageUrl, '', geoIssues)
 
       // Show success with diff summary
       alert(
