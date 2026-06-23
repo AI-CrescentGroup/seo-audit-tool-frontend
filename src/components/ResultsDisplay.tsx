@@ -17,29 +17,49 @@ const SEVERITY_COLOR = {
 }
 
 const METRIC_LABELS: Record<string, string> = {
+  // Crawlability & Errors
   http_errors:                      '4xx / 5xx Errors',
+  noindex_pages:                    'Accidental Noindex Pages',
+  orphan_pages:                     'Orphan Pages',
+  // On-Page: Headings & Structure
   missing_h1:                       'Missing H1 Tags',
+  multiple_h1_tags:                 'Multiple H1 Tags',
+  heading_hierarchy:                'Broken Heading Hierarchy',
+  // On-Page: Meta
   missing_meta_title:               'Missing Meta Titles',
   duplicate_meta_titles:            'Duplicate Meta Titles',
+  title_length_issues:              'Title Length Issues',
   missing_meta_description:         'Missing Meta Descriptions',
   duplicate_meta_descriptions:      'Duplicate Meta Descriptions',
-  missing_canonical:                'Missing Canonical Tags',
-  image_alt_gaps:                   'Images Without Alt Text',
-  broken_internal_links:            'Broken Internal Links',
-  orphan_pages:                     'Orphan Pages',
-  mobile_viewport:                  'Missing Viewport Tag',
-  https_check:                       'Non-HTTPS Pages',
-  redirect_chains:                  'Redirect Chains',
-  multiple_h1_tags:                 'Multiple H1 Tags',
-  title_length_issues:              'Title Length Issues',
   meta_description_length_issues:   'Meta Description Length Issues',
-  mixed_content:                    'Mixed Content (HTTP/HTTPS)',
+  missing_canonical:                'Missing Canonical Tags',
+  // Social & Schema
+  open_graph_tags:                  'Missing Open Graph Tags',
+  twitter_card_tags:                'Missing Twitter Card Tags',
+  faq_schema:                       'Pages Without FAQ Schema',
+  breadcrumb_schema:                'Pages Without Breadcrumb Schema',
+  schema_markup_errors:             'Schema Markup Errors',
+  // Links
+  broken_internal_links:            'Broken Internal Links',
   broken_external_links:            'Broken External Links',
+  redirect_chains:                  'Redirect Chains',
   redirect_loops:                   'Redirect Loops',
+  redirect_status_codes:            'Temporary Redirects (302/307)',
+  // Images
+  image_alt_gaps:                   'Images Without Alt Text',
+  image_file_size_issues:           'Large Uncompressed Images',
+  image_dimensions:                 'Images Missing Width/Height',
+  image_file_names:                 'Generic Image Filenames',
+  // Technical
+  mobile_viewport:                  'Missing Viewport Tag',
+  https_check:                      'Non-HTTPS Pages',
+  mixed_content:                    'Mixed Content (HTTP/HTTPS)',
   hreflang_errors:                  'Hreflang Errors',
   xml_sitemap_issues:               'XML Sitemap Issues',
-  schema_markup_errors:             'Schema Markup Errors',
-  image_file_size_issues:           'Large Uncompressed Images',
+  // Content Quality
+  word_count:                       'Thin Content (< 300 words)',
+  content_to_code_ratio:            'Low Content-to-Code Ratio',
+  url_length:                       'URLs Over 75 Characters',
 }
 
 function MetricsGrid({ metrics }: { metrics: AuditResult['metrics'] }) {
