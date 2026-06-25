@@ -7,6 +7,8 @@ interface GSCStatus {
   connected_at?: string
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
 export function GSCConnect() {
   const [status, setStatus] = useState<GSCStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -17,7 +19,7 @@ export function GSCConnect() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch('/api/gsc/status')
+      const res = await fetch(`${API_BASE}/api/gsc/status`)
       const data = await res.json()
       setStatus(data)
     } catch (err) {
@@ -30,7 +32,7 @@ export function GSCConnect() {
 
   const handleConnect = async () => {
     try {
-      const res = await fetch('/api/gsc/auth')
+      const res = await fetch(`${API_BASE}/api/gsc/auth`)
       const { auth_url } = await res.json()
       if (auth_url) {
         window.location.href = auth_url
