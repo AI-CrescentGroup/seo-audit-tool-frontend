@@ -5,6 +5,8 @@ import { AuditResult, downloadPdf, rewriteForGeo } from '@/utils/api'
 import ScoreCard from './ScoreCard'
 import IssueCard from './IssueCard'
 import Link from 'next/link'
+import { GSCDashboard } from './GSCDashboard'
+import { GSCConnect } from './GSCConnect'
 
 interface Props {
   audit: AuditResult
@@ -266,7 +268,7 @@ export default function ResultsDisplay({ audit }: Props) {
           <h1 className="text-2xl font-bold text-white">{audit.domain}</h1>
           <p className="text-slate-400 text-sm">{audit.pages_crawled} pages crawled · {audit.status}</p>
         </div>
-        <div className="flex gap-2 flex-col sm:flex-row">
+        <div className="flex gap-2 flex-col sm:flex-row items-end">
           <button onClick={handleCopy}
             className="px-4 py-2 rounded-xl border border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 text-sm font-medium transition-colors">
             {copied ? '✓ Copied!' : '🔗 Share'}
@@ -280,6 +282,7 @@ export default function ResultsDisplay({ audit }: Props) {
               <p className="text-xs text-red-400">{downloadError}</p>
             )}
           </div>
+          <GSCConnect />
         </div>
       </div>
 
@@ -397,6 +400,29 @@ export default function ResultsDisplay({ audit }: Props) {
               </div>
             )}
           </div>
+        </section>
+      )}
+
+      {/* Google Search Console */}
+      {audit.gsc_metrics && (
+        <section className="rounded-2xl border border-blue-800 bg-blue-900/20 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="text-blue-400">🔎</span> Google Search Console
+            </h2>
+            <span className="text-xs bg-blue-900/50 border border-blue-800 px-2 py-1 rounded text-blue-300">
+              Last 30 days
+            </span>
+          </div>
+          <GSCDashboard
+            gscMetrics={audit.gsc_metrics}
+            geoScores={
+              audit.metrics?.geo_score?.per_page?.map((p: any) => ({
+                url: p.url,
+                geo_score: p.geo_score
+              })) || []
+            }
+          />
         </section>
       )}
 
