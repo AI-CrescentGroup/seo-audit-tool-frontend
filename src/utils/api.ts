@@ -42,6 +42,23 @@ export interface GEOPageScore {
   geo_issues: string[]
 }
 
+export interface GSCMetrics {
+  domain: string
+  date_range: string
+  site_totals: {
+    impressions: number
+    clicks: number
+    ctr: number
+    avg_position: number
+  }
+  per_url: Record<string, {
+    impressions: number
+    clicks: number
+    ctr: number
+    position: number
+  }>
+}
+
 export interface AuditMetrics {
   pages_crawled: number
   http_errors: MetricDetail
@@ -83,6 +100,7 @@ export interface AuditResult {
     best_practices: number
   } | null
   ai_recommendations: AIRecommendations
+  gsc_metrics?: GSCMetrics
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
