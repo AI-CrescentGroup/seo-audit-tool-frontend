@@ -9,14 +9,17 @@ interface GeoScore {
 
 interface GSCMetrics {
   domain: string
-  date_range: string
-  site_totals: {
+  date_range?: string
+  // Present when the audited domain isn't verified in the connected account.
+  error?: string
+  message?: string
+  site_totals?: {
     impressions: number
     clicks: number
     ctr: number
     avg_position: number
   }
-  per_url: Record<string, {
+  per_url?: Record<string, {
     impressions: number
     clicks: number
     ctr: number
@@ -34,7 +37,24 @@ export function GSCDashboard({
   const [sortBy, setSortBy] = useState<'clicks' | 'impressions' | 'ctr' | 'position'>('clicks')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
-  if (!gscMetrics) {
+  // Domain isn't verified in the connected GSC account — explain, don't hide.
+  if (gscMetrics?.error === 'not_in_account') {
+    return (
+      <div className="gsc-warning space-y-3 rounded-lg border border-amber-800 bg-amber-900/20 p-4">
+        <p className="text-amber-300 text-sm">⚠️ {gscMetrics.message}</p>
+        <a
+          href="https://search.google.com/search-console"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block text-sm text-amber-200 underline hover:text-amber-100"
+        >
+          Open Search Console →
+        </a>
+      </div>
+    )
+  }
+
+  if (!gscMetrics || !gscMetrics.site_totals || !gscMetrics.per_url) {
     return (
       <div className="gsc-empty space-y-4 text-center py-8">
         <p className="text-slate-400 text-sm">

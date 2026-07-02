@@ -35,7 +35,7 @@ export default function AuditForm() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
       if (msg.includes('502') || msg.includes('503')) {
-        setError('API server is not reachable. Make sure the backend is running on port 8000.')
+        setError('API server is not reachable. Make sure the backend is running on port 8080.')
       } else if (msg.includes('404')) {
         setError('Domain not found or unreachable.')
       } else {

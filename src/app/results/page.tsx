@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { listAudits, AuditResult } from '@/utils/api'
+import { listAudits, AuditSummary } from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 function scoreBadge(score: number) {
@@ -11,22 +11,18 @@ function scoreBadge(score: number) {
   return { text: 'text-red-400', bg: 'bg-red-900/30 border-red-700' }
 }
 
-function statusStyle(status: AuditResult['status']) {
-  switch (status) {
-    case 'completed':
-      return 'bg-green-900/40 text-green-400 border-green-800'
-    case 'cached':
-      return 'bg-brand-900/40 text-brand-400 border-brand-700'
-    case 'processing':
-      return 'bg-amber-900/40 text-amber-400 border-amber-800'
-    default:
-      return 'bg-red-900/40 text-red-400 border-red-800'
-  }
+// The list endpoint has no status column, so derive a health label from the score.
+function healthFromScore(score: number): { label: string; style: string } {
+  if (score >= 70) return { label: 'Good', style: 'bg-green-900/40 text-green-400 border-green-800' }
+  if (score >= 40) return { label: 'Needs work', style: 'bg-amber-900/40 text-amber-400 border-amber-800' }
+  return { label: 'Critical', style: 'bg-red-900/40 text-red-400 border-red-800' }
 }
 
-function AuditCard({ audit }: { audit: AuditResult }) {
-  const score = audit.ai_recommendations?.overall_score ?? 0
+function AuditCard({ audit }: { audit: AuditSummary }) {
+  const score = audit.overall_score ?? 0
+  const pages = audit.pages_crawled ?? 0
   const badge = scoreBadge(score)
+  const health = healthFromScore(score)
 
   const card = (
     <div className="group h-full rounded-2xl border border-slate-800 bg-slate-900/60 p-5 transition-all hover:border-brand-600 hover:bg-slate-900 hover:-translate-y-0.5">
@@ -40,11 +36,11 @@ function AuditCard({ audit }: { audit: AuditResult }) {
       </div>
 
       <div className="mt-4 flex items-center justify-between text-sm">
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${statusStyle(audit.status)}`}>
-          {audit.status}
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${health.style}`}>
+          {health.label}
         </span>
         <span className="text-slate-400">
-          {audit.pages_crawled} {audit.pages_crawled === 1 ? 'page' : 'pages'}
+          {pages} {pages === 1 ? 'page' : 'pages'}
         </span>
       </div>
     </div>
@@ -60,7 +56,7 @@ function AuditCard({ audit }: { audit: AuditResult }) {
 }
 
 export default function PastAuditsPage() {
-  const [audits, setAudits] = useState<AuditResult[]>([])
+  const [audits, setAudits] = useState<AuditSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

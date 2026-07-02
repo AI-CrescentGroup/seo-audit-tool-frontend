@@ -44,14 +44,17 @@ export interface GEOPageScore {
 
 export interface GSCMetrics {
   domain: string
-  date_range: string
-  site_totals: {
+  date_range?: string
+  // Set when the audited domain isn't verified in the connected GSC account.
+  error?: string
+  message?: string
+  site_totals?: {
     impressions: number
     clicks: number
     ctr: number
     avg_position: number
   }
-  per_url: Record<string, {
+  per_url?: Record<string, {
     impressions: number
     clicks: number
     ctr: number
@@ -103,6 +106,20 @@ export interface AuditResult {
   gsc_metrics?: GSCMetrics
 }
 
+/**
+ * Shape returned by GET /api/audits (the list endpoint). It selects
+ * `metrics->pages_crawled` and `ai_insights->overall_score`, which PostgREST
+ * returns as FLAT `pages_crawled` / `overall_score` fields — NOT the nested
+ * `metrics`/`ai_recommendations`/`status` shape of AuditResult.
+ */
+export interface AuditSummary {
+  id: string | null
+  domain: string
+  created_at?: string
+  pages_crawled: number | null
+  overall_score: number | null
+}
+
 // ── helpers ────────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
@@ -131,9 +148,9 @@ export async function getAudit(id: string): Promise<AuditResult> {
   return apiFetch<AuditResult>(`/api/audit/${id}`)
 }
 
-/** GET /api/audits — list recent audits */
-export async function listAudits(limit = 10): Promise<AuditResult[]> {
-  return apiFetch<AuditResult[]>(`/api/audits?limit=${limit}`)
+/** GET /api/audits — list recent audits (flat summary rows) */
+export async function listAudits(limit = 10): Promise<AuditSummary[]> {
+  return apiFetch<AuditSummary[]>(`/api/audits?limit=${limit}`)
 }
 
 /** Trigger browser download of the PDF report */
